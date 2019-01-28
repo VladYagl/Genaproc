@@ -84,7 +84,7 @@ def full():
         rand_weight = (rand ** 2.5) * as_last_enchanted
         # print(rand_weight + words_weight, word, "rand:", rand, rand_weight,
         #       "words:", words, words_weight, "as_last:", as_last, as_last_enchanted)
-        if rand_weight + words_weight > 0.55 or words > 30:
+        if rand_weight + words_weight > 0.6 or words > 30:
             # print(word, "rand:", rand, rand_weight,
             #       "words:", words, words_weight, "as_last:", as_last, as_last_enchanted)
             break
@@ -137,7 +137,7 @@ def load():
 
 def build():
     global d
-    d = Dictionary("texts/reddit.txt")
+    d = Dictionary("texts/pasta_chan.txt")
     with open('dict_save', 'wb') as f:
         pickle.dump(d, f)
     main()
