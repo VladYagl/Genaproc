@@ -2,8 +2,10 @@ from tkinter import ttk
 from multi_dictionary import MultiDictionary
 from threading import Thread
 from pynput.keyboard import Key, Controller, Listener
+from functional import partial
 
 import time
+import os
 import sys
 import tkinter
 import random
@@ -14,7 +16,6 @@ root = tkinter.Tk()
 buttons = []
 first_sentence = True
 first_word = True
-
 
 def filter_unicode(a):
     return ''.join(filter(lambda x: ord(x) in range(32767), a))
@@ -139,6 +140,33 @@ def full():
 
     new()
 
+def spam_text():
+    text = random_text()
+    text = filter_unicode(text)
+    text = chat_prefix.get() + text
+    print(text)
+    delay = len(text)
+
+    keyboard.release(Key.shift)
+
+    keyboard.press(Key.enter)
+    keyboard.release(Key.enter)
+    chance = 0.0
+    for word in text.split(' '):
+        chance += split_chance.get()
+        keyboard.type(word + ' ')
+        time.sleep(chat_delay.get() * len(word))
+        if random.random() < chance:
+            chance = 0.0
+            keyboard.press(Key.enter);
+            keyboard.release(Key.enter);
+            keyboard.press(Key.enter)
+            time.sleep(0.03)
+            keyboard.release(Key.enter)
+            keyboard.type(chat_prefix.get())
+
+    keyboard.press(Key.enter);
+    keyboard.release(Key.enter);
 
 repeat = True
 
@@ -161,45 +189,23 @@ def auto():
 
             if repeat == False:
                 break
-            print("lets' go:", repeat)
-            text = random_text()
-            text = filter_unicode(text)
-            text = "/all " + text
-            print(text)
-            delay = len(text)
 
-            keyboard.release(Key.shift)
+            spam_text()
 
-            keyboard.press(Key.enter)
-            keyboard.release(Key.enter)
-            chance = 0.0
-            for word in text.split(' '):
-                chance += 0.03
-                keyboard.type(word + ' ')
-                time.sleep(.01 * len(word))
-                if random.random() < chance:
-                    chance = 0.0
-                    keyboard.press(Key.enter);
-                    keyboard.release(Key.enter);
-                    keyboard.press(Key.enter)
-                    keyboard.release(Key.enter)
-                    keyboard.type("/all ")
-                    time.sleep(.05)
-
-            keyboard.press(Key.enter);
-            keyboard.release(Key.enter);
 
     spamt = Thread(target=spam)
-    spamt.start()
+    # spamt.start()
 
     def on_press(key):
         global repeat
-        if key == Key.f10:
+        if key == binds[spam_key]:
+            spam_text()
+        if key == binds[kill_key]:
             return False
-        if key == Key.f7:
+        if key == binds[stop_key]:
             repeat = False
             print("over")
-        if key == Key.f8:
+        if key == binds[start_key]:
             repeat = True
             spamt = Thread(target=spam)
             spamt.start()
@@ -252,15 +258,95 @@ def build():
     main()
 
 
+def pick():
+    filename = tkinter.filedialog.askopenfilename(initialdir=os.getcwd())
+    file.set(filename)
+
+
+start_key = 0
+stop_key = 1
+spam_key = 2
+kill_key = 3
+
+binds = [
+    Key.f8,
+    Key.f7,
+    Key.f9,
+    Key.f10
+]
+
+texts = [
+    ttk.Label(root, text=""),
+    ttk.Label(root, text=""),
+    ttk.Label(root, text=""),
+    ttk.Label(root, text="")
+]
+
+names = [
+    "Start",
+    "Stop",
+    "Spam",
+    "Kill"
+]
+
+def update_binds():
+    print("start")
+    for i in range(4):
+        print(i, names[i], binds[i])
+        texts[i].configure(text = f"{names[i]} key: {binds[i]}")
+
+
+def settings():
+
+    def bind(bind_key):
+        print(f"binding : {bind_key}")
+        def press(key):
+            binds[bind_key] = key
+            print(f"bind_key = {bind_key} | new_key = {key}")
+            listener.stop()
+
+        with Listener(on_press=press) as listener:
+            listener.join()
+            update_binds()
+
+    ttk.Label(root, text="----Settings----").grid()
+    ttk.Label(root, text="Chat Prefix").grid()
+    ttk.Entry(root, textvariable=chat_prefix).grid()
+    ttk.Label(root, text="Number of words").grid()
+    ttk.Entry(root, textvariable=prefix_size).grid()
+    ttk.Label(root, text="Split chance").grid()
+    ttk.Entry(root, textvariable=split_chance).grid()
+    ttk.Label(root, text="Chat delay").grid()
+    ttk.Entry(root, textvariable=chat_delay).grid()
+
+    update_binds()
+
+    for i in range(4):
+        texts[i].grid()
+        ttk.Button(root, text="Bind", command=partial(bind, i)).grid()
+
 file = tkinter.StringVar()
 file.set("texts/league.txt")
 
 prefix_size = tkinter.IntVar()
 prefix_size.set(2)
 
-ttk.Entry(root, textvariable=prefix_size).grid()
-ttk.Entry(root, textvariable=file).grid()
+chat_prefix = tkinter.StringVar()
+chat_prefix.set("/all ")
+
+split_chance = tkinter.DoubleVar()
+split_chance.set(0.03)
+
+chat_delay = tkinter.DoubleVar()
+chat_delay.set(.05)
+
+
+ttk.Entry(root, textvariable=file, width=40).grid()
+ttk.Button(root, text="Select file", command=pick).grid()
+ttk.Label(root, text="--").grid()
 ttk.Button(root, text="Build new", command=build).grid()
 ttk.Button(root, text="Load", command=load).grid()
+
+settings()
 
 root.mainloop()
