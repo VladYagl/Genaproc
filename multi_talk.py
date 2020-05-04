@@ -159,6 +159,7 @@ def full():
 
 
 def spam_text():
+    global pls_stop
     text = random_text()
     text = filter_unicode(text)
     text = chat_prefix.get() + text
@@ -170,6 +171,8 @@ def spam_text():
     keyboard.release(Key.enter)
     chance = 0.0
     for word in text.split(' '):
+        if pls_stop:
+            break
         chance += split_chance.get()
         keyboard.type(word + ' ')
         time.sleep(chat_delay.get() * len(word))
@@ -184,9 +187,11 @@ def spam_text():
 
     keyboard.press(Key.enter)
     keyboard.release(Key.enter)
+    pls_stop = False
 
 
 repeat = True
+pls_stop = False
 
 
 def auto():
@@ -212,15 +217,16 @@ def auto():
             spam_text()
 
     def on_press(key):
-        global repeat
-        if key == binds[spam_key]:
-            spam_text()
-        if key == binds[kill_key]:
-            return False
-        if key == binds[stop_key]:
+        global repeat, pls_stop
+        if key == settings.binds[spam_key]:
+            singlet = Thread(target=spam_text)
+            singlet.start()
+        if key == settings.binds[kill_key]:
+            pls_stop = True
+        if key == settings.binds[stop_key]:
             repeat = False
             print("over")
-        if key == binds[start_key]:
+        if key == settings.binds[start_key]:
             repeat = True
             spamt = Thread(target=spam)
             spamt.start()
@@ -240,7 +246,8 @@ def main():
     root.destroy()
     root = tkinter.Tk()
 
-    ttk.Button(root, text="Automate", command=auto).grid()
+    # ttk.Button(root, text="Automate", command=auto).grid()
+    auto()
 
     ttk.Button(root, text="Random sentence", command=full).grid()
 
@@ -262,8 +269,20 @@ def dump_file(file: str):
     return file + ".dict"
 
 
+def save_settings():
+    settings.file = file.get()
+    settings.prefix_size = prefix_size.get()
+    settings.chat_prefix = chat_prefix.get()
+    settings.split_chance = split_chance.get()
+    settings.chat_delay = chat_delay.get()
+
+    with open(settings_file, 'wb') as f:
+        pickle.dump(settings, f)
+
+
 def load():
     global d
+    save_settings()
     with open(dump_file(file.get()), 'rb') as f:
         d = pickle.load(f)
     main()
@@ -271,6 +290,7 @@ def load():
 
 def build():
     global d
+    save_settings()
     d = MultiDictionary(prefix_size.get(), file.get())
     with open(dump_file(file.get()), 'wb') as f:
         pickle.dump(d, f)
@@ -287,18 +307,12 @@ stop_key = 1
 spam_key = 2
 kill_key = 3
 
-binds = [
-    Key.f8,
-    Key.f7,
-    Key.f9,
-    Key.f10
-]
-
 texts = [
-    ttk.Label(root, text=""),
-    ttk.Label(root, text=""),
-    ttk.Label(root, text=""),
-    ttk.Label(root, text="")
+        None, None, None, None
+    # ttk.Label(root, text=""),
+    # ttk.Label(root, text=""),
+    # ttk.Label(root, text=""),
+    # ttk.Label(root, text="")
 ]
 
 names = [
@@ -312,17 +326,19 @@ names = [
 def update_binds():
     print("start")
     for i in range(4):
-        print(i, names[i], binds[i])
-        texts[i].configure(text=f"{names[i]} key: {binds[i]}")
+        if texts[i] == None:
+            texts[i] = ttk.Label(root, text="")
+        print(i, names[i], settings.binds[i])
+        texts[i].configure(text=f"{names[i]} key: {settings.binds[i]}")
 
 
-def settings():
+def show_settings():
 
     def bind(bind_key):
         print(f"binding : {bind_key}")
 
         def press(key):
-            binds[bind_key] = key
+            settings.binds[bind_key] = key
             print(f"bind_key = {bind_key} | new_key = {key}")
             listener.stop()
 
@@ -369,30 +385,51 @@ def settings():
         ).grid(sticky=tkinter.W, column=1, row=texts[i].grid_info()['row'], in_=frame)
 
 
+class Settings:
+    def __init__(self):
+        self.file = "texts/league.txt"
+        self.prefix_size = 2
+        self.chat_prefix = "/all "
+        self.split_chance = 0.03
+        self.chat_delay = .05
+        self.binds = [
+            Key.f8,
+            Key.f7,
+            Key.f9,
+            Key.f10
+        ]
+
+
+settings_file = 'settings.cum'
+
+try:
+    with open(settings_file, 'rb') as f:
+        settings = pickle.load(f)
+except BaseException as e:
+    print(e)
+    settings = Settings()
+
 file = tkinter.StringVar()
-file.set("texts/league.txt")
-
+file.set(settings.file)
 prefix_size = tkinter.IntVar()
-prefix_size.set(2)
-
+prefix_size.set(settings.prefix_size)
 chat_prefix = tkinter.StringVar()
-chat_prefix.set("/all ")
-
+chat_prefix.set(settings.chat_prefix)
 split_chance = tkinter.DoubleVar()
-split_chance.set(0.03)
-
+split_chance.set(settings.split_chance)
 chat_delay = tkinter.DoubleVar()
-chat_delay.set(.05)
+chat_delay.set(settings.chat_delay)
 
-
-ttk.Entry(root, textvariable=file, width=40).grid(columnspan=2)
-ttk.Button(root, text="Select file", command=pick).grid(columnspan=2)
+frame = ttk.Frame()
+frame.grid(columnspan=2)
+ttk.Entry(root, textvariable=file, width=40).grid(in_=frame)
+ttk.Button(root, text="Select file", command=pick).grid(column=1, row=0, in_=frame)
 btn = ttk.Button(root, text="Build new", command=build)
 btn.grid(sticky=tkinter.E)
 ttk.Button(root, text="Load", command=load).grid(
     row=btn.grid_info()['row'], column=1, sticky=tkinter.W
 )
 
-settings()
+show_settings()
 
 root.mainloop()
