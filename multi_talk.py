@@ -17,6 +17,7 @@ buttons = []
 first_sentence = True
 first_word = True
 
+
 def filter_unicode(a):
     return ''.join(filter(lambda x: ord(x) in range(32767), a))
 
@@ -41,7 +42,11 @@ def select(selected_word):
         button.destroy()
 
     for word in d.suggest_next():
-        button = ttk.Button(root, text=filter_unicode(word), command=lambda text=word: select(text))
+        button = ttk.Button(
+            root,
+            text=filter_unicode(word),
+            command=lambda text=word: select(text)
+        )
         buttons.append(button)
         button.grid()
 
@@ -65,11 +70,16 @@ def new():
             add(' ')
             select(selected[-1])
 
-        button = ttk.Button(root, text=filter_unicode(text), command=lambda text=first: call(text))
+        button = ttk.Button(
+            root,
+            text=filter_unicode(text),
+            command=lambda text=first: call(text)
+        )
         buttons.append(button)
         button.grid()
 
     search_buttons = []
+
     def find(_):
         for button in search_buttons:
             button.destroy()
@@ -84,12 +94,19 @@ def new():
                     add(' ')
                     select(selected[-1])
 
-                button = ttk.Button(root, text=filter_unicode(text), command=lambda text=first: call(text))
+                button = ttk.Button(
+                    root,
+                    text=filter_unicode(text),
+                    command=lambda text=first: call(text)
+                )
                 buttons.append(button)
                 search_buttons.append(button)
                 button.grid()
-        except:
-            label = ttk.Label(root, text="No sentese found starting with this word")
+        except BaseException:
+            label = ttk.Label(
+                root,
+                text="No sentese found starting with this word"
+            )
             buttons.append(label)
             search_buttons.append(label)
             label.grid()
@@ -140,12 +157,12 @@ def full():
 
     new()
 
+
 def spam_text():
     text = random_text()
     text = filter_unicode(text)
     text = chat_prefix.get() + text
     print(text)
-    delay = len(text)
 
     keyboard.release(Key.shift)
 
@@ -158,17 +175,19 @@ def spam_text():
         time.sleep(chat_delay.get() * len(word))
         if random.random() < chance:
             chance = 0.0
-            keyboard.press(Key.enter);
-            keyboard.release(Key.enter);
+            keyboard.press(Key.enter)
+            keyboard.release(Key.enter)
             keyboard.press(Key.enter)
             time.sleep(0.03)
             keyboard.release(Key.enter)
             keyboard.type(chat_prefix.get())
 
-    keyboard.press(Key.enter);
-    keyboard.release(Key.enter);
+    keyboard.press(Key.enter)
+    keyboard.release(Key.enter)
+
 
 repeat = True
+
 
 def auto():
     print("Start!")
@@ -182,19 +201,15 @@ def auto():
             n = random.randrange(10 + int(delay / 2), 60 + delay)
             # n = random.randrange(5, 10)
             for i in range(n):
-                if repeat == False:
+                if not repeat:
                     break
                 sys.stdout.write("\r" + str(i) + " / " + str(n) + " | ")
                 time.sleep(1)
 
-            if repeat == False:
+            if not repeat:
                 break
 
             spam_text()
-
-
-    spamt = Thread(target=spam)
-    # spamt.start()
 
     def on_press(key):
         global repeat
@@ -229,7 +244,11 @@ def main():
 
     ttk.Button(root, text="Random sentence", command=full).grid()
 
-    ttk.Label(root, text="text size: " + str(d.word_count) + " dict size:" + str(d.dict_size)).grid()
+    ttk.Label(
+        root,
+        text="text size: " + str(d.word_count)
+        + " dict size:" + str(d.dict_size)
+    ).grid()
 
     text = tkinter.Text(root, height=10, width=40)
     text.configure(state="disabled")
@@ -289,17 +308,19 @@ names = [
     "Kill"
 ]
 
+
 def update_binds():
     print("start")
     for i in range(4):
         print(i, names[i], binds[i])
-        texts[i].configure(text = f"{names[i]} key: {binds[i]}")
+        texts[i].configure(text=f"{names[i]} key: {binds[i]}")
 
 
 def settings():
 
     def bind(bind_key):
         print(f"binding : {bind_key}")
+
         def press(key):
             binds[bind_key] = key
             print(f"bind_key = {bind_key} | new_key = {key}")
@@ -309,21 +330,44 @@ def settings():
             listener.join()
             update_binds()
 
-    ttk.Label(root, text="----Settings----").grid()
-    ttk.Label(root, text="Chat Prefix").grid()
-    ttk.Entry(root, textvariable=chat_prefix).grid()
-    ttk.Label(root, text="Number of words").grid()
-    ttk.Entry(root, textvariable=prefix_size).grid()
-    ttk.Label(root, text="Split chance").grid()
-    ttk.Entry(root, textvariable=split_chance).grid()
-    ttk.Label(root, text="Chat delay").grid()
-    ttk.Entry(root, textvariable=chat_delay).grid()
+    ttk.Label(root).grid(columnspan=2)
+    frame = tkinter.Frame()
+    frame.grid(columnspan=2)
+
+    ttk.Label(root, text="----------Settings----------").grid(
+        columnspan=2, in_=frame
+    )
+    label = ttk.Label(root, text="Chat Prefix")
+    label.grid(sticky=tkinter.E, in_=frame)
+    ttk.Entry(root, textvariable=chat_prefix).grid(
+        column=1, row=label.grid_info()['row'], sticky=tkinter.W, in_=frame
+    )
+    label = ttk.Label(root, text="Number of words")
+    label.grid(sticky=tkinter.E, in_=frame)
+    ttk.Entry(root, textvariable=prefix_size).grid(
+        column=1, row=label.grid_info()['row'], sticky=tkinter.W, in_=frame
+    )
+    label = ttk.Label(root, text="Split chance")
+    label.grid(sticky=tkinter.E, in_=frame)
+    ttk.Entry(root, textvariable=split_chance).grid(
+        column=1, row=label.grid_info()['row'], sticky=tkinter.W, in_=frame
+    )
+    label = ttk.Label(root, text="Chat delay")
+    label.grid(sticky=tkinter.E, in_=frame)
+    ttk.Entry(root, textvariable=chat_delay).grid(
+        column=1, row=label.grid_info()['row'], sticky=tkinter.W, in_=frame
+    )
 
     update_binds()
 
     for i in range(4):
-        texts[i].grid()
-        ttk.Button(root, text="Bind", command=partial(bind, i)).grid()
+        texts[i].grid(sticky=tkinter.E, in_=frame)
+        ttk.Button(
+            root,
+            text="Bind",
+            command=partial(bind, i)
+        ).grid(sticky=tkinter.W, column=1, row=texts[i].grid_info()['row'], in_=frame)
+
 
 file = tkinter.StringVar()
 file.set("texts/league.txt")
@@ -341,11 +385,13 @@ chat_delay = tkinter.DoubleVar()
 chat_delay.set(.05)
 
 
-ttk.Entry(root, textvariable=file, width=40).grid()
-ttk.Button(root, text="Select file", command=pick).grid()
-ttk.Label(root, text="--").grid()
-ttk.Button(root, text="Build new", command=build).grid()
-ttk.Button(root, text="Load", command=load).grid()
+ttk.Entry(root, textvariable=file, width=40).grid(columnspan=2)
+ttk.Button(root, text="Select file", command=pick).grid(columnspan=2)
+btn = ttk.Button(root, text="Build new", command=build)
+btn.grid(sticky=tkinter.E)
+ttk.Button(root, text="Load", command=load).grid(
+    row=btn.grid_info()['row'], column=1, sticky=tkinter.W
+)
 
 settings()
 
